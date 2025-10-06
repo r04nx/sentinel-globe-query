@@ -34,22 +34,22 @@ const stats = [
 
 export const StatsPanel = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
       {stats.map((stat, i) => {
         const Icon = stat.icon;
         return (
           <Card
             key={i}
-            className="p-4 bg-card/50 backdrop-blur-sm border-sentinel-border hover:border-sentinel-green/50 transition-colors"
+            className="p-3 bg-card/60 backdrop-blur-sm border-sentinel-border/80 hover:border-sentinel-green/50 transition-colors rounded-lg"
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <span className="text-xs text-sentinel-green">{stat.change}</span>
+                <p className="text-[11px] text-muted-foreground mb-0.5">{stat.label}</p>
+                <p className="text-xl font-bold leading-none">{stat.value}</p>
+                <span className="text-[11px] text-sentinel-green">{stat.change}</span>
               </div>
-              <div className={`p-2 bg-background rounded-lg ${stat.color}`}>
-                <Icon className="w-5 h-5" />
+              <div className={`p-2 bg-background/70 border border-sentinel-border/60 rounded-md shadow-sm ${stat.color}`}>
+                <Icon className="w-4 h-4" />
               </div>
             </div>
           </Card>

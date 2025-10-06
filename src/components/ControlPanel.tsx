@@ -1,4 +1,5 @@
-import { Settings, Filter, Download, RefreshCw } from "lucide-react";
+import { Settings, Filter, Download, RefreshCw, ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Slider } from "./ui/slider";
@@ -7,6 +8,7 @@ import { toast } from "sonner";
 import jsPDF from "jspdf";
 
 export const ControlPanel = () => {
+  const [open, setOpen] = useState(true);
   const handleExportPDF = () => {
     const doc = new jsPDF();
     
@@ -37,20 +39,26 @@ export const ControlPanel = () => {
   };
 
   return (
-    <Card className="p-4 bg-card/50 backdrop-blur-sm border-sentinel-border">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <Settings className="w-4 h-4" />
-            Control Panel
-          </h3>
-        </div>
+    <Card className="p-0 bg-card/60 backdrop-blur-sm border-sentinel-border/80 rounded-lg overflow-hidden">
+      <button
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-sentinel-green/5 transition-colors"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls="control-panel-content"
+      >
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Settings className="w-4 h-4" />
+          Control Panel
+        </h3>
+        {open ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+      </button>
 
-        <div className="space-y-4">
+      <div id="control-panel-content" className={`px-4 pb-4 ${open ? 'animate-in fade-in-10 slide-in-from-top-1 duration-200' : 'hidden'}`}>
+        <div className="space-y-4 pt-2">
           <div>
             <label className="text-xs text-muted-foreground mb-2 block">Disaster Type Filter</label>
             <Select defaultValue="all">
-              <SelectTrigger className="bg-background border-sentinel-border">
+              <SelectTrigger className="bg-background/70 border-sentinel-border/80 hover:border-sentinel-green/40">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
@@ -76,7 +84,7 @@ export const ControlPanel = () => {
           <div>
             <label className="text-xs text-muted-foreground mb-2 block">Time Range</label>
             <Select defaultValue="24h">
-              <SelectTrigger className="bg-background border-sentinel-border">
+              <SelectTrigger className="bg-background/70 border-sentinel-border/80 hover:border-sentinel-green/40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -92,7 +100,7 @@ export const ControlPanel = () => {
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 border-sentinel-border hover:bg-sentinel-green/10 hover:text-sentinel-green"
+              className="flex-1 border-sentinel-border/80 hover:bg-sentinel-green/10 hover:text-sentinel-green"
               onClick={handleRefresh}
             >
               <RefreshCw className="w-3 h-3 mr-1" />

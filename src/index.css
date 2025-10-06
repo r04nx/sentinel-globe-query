@@ -96,7 +96,11 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground font-mono;
     font-family: 'JetBrains Mono', monospace;
+    /* Simple slanted triangular cursor (no curves) */
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><polygon points="4,4 8,22 14,16" fill="%23001010" stroke="%2300ffa3" stroke-width="2"/><polygon points="4,4 8,22 14,16" fill="%2300ffa3" opacity="0.18"/></svg>') 4 4, auto;
   }
+  button, a, [role="button"] { cursor: pointer; }
+  input, textarea, select { cursor: text; }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'JetBrains Mono', monospace;
@@ -140,4 +144,8 @@ All colors MUST be HSL.
   .scanline {
     animation: scanline 8s linear infinite;
   }
+
+  /* Prevent copying/selecting - allow inputs */
+  .no-select, body, body * { -webkit-user-select: none; -moz-user-select: none; user-select: none; }
+  input, textarea { -webkit-user-select: text; -moz-user-select: text; user-select: text; }
 }

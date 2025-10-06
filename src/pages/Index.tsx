@@ -2,6 +2,7 @@ import { useState, Suspense } from "react";
 import { Menu, Bell, Settings, User, X, Maximize2, Minimize2 } from "lucide-react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { Globe } from "@/components/Globe";
+import { MapWizard, defaultGlobeConfig, type GlobeConfig } from "@/components/MapWizard";
 import { ChatInterface } from "@/components/ChatInterface";
 import { StatsPanel } from "@/components/StatsPanel";
 import { DataVisualization } from "@/components/DataVisualization";
@@ -14,6 +15,10 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [chatExpanded, setChatExpanded] = useState(false);
   const [showPanels, setShowPanels] = useState(true);
+  const [showWizard, setShowWizard] = useState(false);
+  const [globeCfg, setGlobeCfg] = useState<GlobeConfig>(defaultGlobeConfig);
+  const [leftWidth, setLeftWidth] = useState<number>(400);
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
 
   if (isLoading) {
     return <LoadingScreen onLoadComplete={() => setIsLoading(false)} />;
@@ -21,6 +26,19 @@ const Index = () => {
 
   return (
     <div className="relative min-h-screen bg-black text-foreground overflow-hidden">
+      {/* Global mouse handlers for resizing */}
+      {isResizingLeft && (
+        <div
+          className="fixed inset-0 z-50"
+          onMouseMove={(e) => {
+            const min = 280; const max = 560;
+            const newWidth = Math.min(max, Math.max(min, e.clientX - 24));
+            setLeftWidth(newWidth);
+          }}
+          onMouseUp={() => setIsResizingLeft(false)}
+          onMouseLeave={() => setIsResizingLeft(false)}
+        />
+      )}
       {/* Fullscreen Globe Background */}
       <div className="fixed inset-0 z-0">
         <Suspense fallback={
@@ -31,7 +49,14 @@ const Index = () => {
             </div>
           </div>
         }>
-          <Globe />
+          <Globe config={{
+            basemap: globeCfg.basemap,
+            showGrid: globeCfg.showGrid,
+            showOutlines: globeCfg.showOutlines,
+            globeOpacity: globeCfg.globeOpacity,
+            autoRotate: globeCfg.autoRotate,
+            autoRotateSpeed: globeCfg.autoRotateSpeed,
+          }} />
         </Suspense>
       </div>
 
@@ -62,6 +87,9 @@ const Index = () => {
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-destructive" />
               </Button>
+              <Button variant="outline" size="sm" className="hover:bg-sentinel-green/10" onClick={() => setShowWizard(true)}>
+                Map Wizard
+              </Button>
               <Button variant="ghost" size="icon" className="hover:bg-sentinel-green/10">
                 <Settings className="w-5 h-5" />
               </Button>
@@ -75,13 +103,25 @@ const Index = () => {
 
       {/* Left Panel - Stats & Controls */}
       {showPanels && (
-        <div className="fixed left-6 top-24 bottom-6 z-30 w-80 space-y-4 overflow-y-auto">
-          <div className="space-y-4">
-            <StatsPanel />
-            <ControlPanel />
-            <DataSourcesPanel />
+        <>
+          <div
+            className="fixed left-6 top-24 bottom-6 z-30 space-y-4 overflow-y-auto"
+            style={{ width: `${leftWidth}px` }}
+          >
+            <div className="space-y-4">
+              <StatsPanel />
+              <ControlPanel />
+              <DataSourcesPanel />
+            </div>
           </div>
-        </div>
+          {/* Resize handle */}
+          {/* Resize handle removed visually (kept hit area only) */}
+          <div
+            className="fixed top-24 bottom-6 z-40 cursor-col-resize"
+            style={{ left: `${6 + leftWidth + 8}px`, width: '8px' }}
+            onMouseDown={() => setIsResizingLeft(true)}
+          />
+        </>
       )}
 
       {/* Right Panel - Data Visualization */}
@@ -119,6 +159,14 @@ const Index = () => {
           <p className="mt-1">Team VOLDEMORT | HERE Technology Hackathon 2025</p>
         </div>
       </footer>
+
+      {showWizard && (
+        <MapWizard
+          initial={globeCfg}
+          onApply={(cfg) => { setGlobeCfg(cfg); setShowWizard(false); }}
+          onClose={() => setShowWizard(false)}
+        />
+      )}
     </div>
   );
 };
