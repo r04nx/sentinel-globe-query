@@ -69,12 +69,12 @@ export const ChatInterface = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-card/50 backdrop-blur-sm border border-sentinel-border rounded-lg">
+    <div className="flex flex-col h-full bg-card/80 backdrop-blur-md border border-sentinel-border">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-sentinel-border">
+      <div className="px-6 py-4 border-b border-sentinel-border bg-background/50">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-sentinel-green rounded-full animate-pulse" />
-          <h3 className="font-semibold text-sm">AI Query Engine</h3>
+          <div className="w-2 h-2 bg-sentinel-green animate-pulse" />
+          <h3 className="font-semibold text-base">AI Query Engine</h3>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Natural language interface for disaster intelligence
@@ -82,7 +82,7 @@ export const ChatInterface = () => {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <ScrollArea className="flex-1 p-6" ref={scrollRef}>
         <div className="space-y-4">
           {messages.map((message, i) => (
             <div
@@ -90,14 +90,14 @@ export const ChatInterface = () => {
               className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                className={`max-w-[75%] px-5 py-3 ${
                   message.role === "user"
                     ? "bg-sentinel-green/20 border border-sentinel-green/30"
-                    : "bg-muted border border-border"
+                    : "bg-muted/80 border border-border"
                 }`}
               >
-                <p className="text-sm">{message.content}</p>
-                <span className="text-xs text-muted-foreground mt-1 block">
+                <p className="text-sm leading-relaxed">{message.content}</p>
+                <span className="text-xs text-muted-foreground mt-2 block">
                   {message.timestamp.toLocaleTimeString()}
                 </span>
               </div>
@@ -105,7 +105,7 @@ export const ChatInterface = () => {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-muted border border-border rounded-lg px-4 py-2 flex items-center gap-2">
+              <div className="bg-muted/80 border border-border px-5 py-3 flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-sentinel-green" />
                 <span className="text-sm text-muted-foreground">Processing query...</span>
               </div>
@@ -115,25 +115,25 @@ export const ChatInterface = () => {
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-4 border-t border-sentinel-border">
-        <div className="flex gap-2">
+      <div className="p-6 border-t border-sentinel-border bg-background/50">
+        <div className="flex gap-3">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Ask about disasters, data sources, or analytics..."
-            className="flex-1 bg-background border-sentinel-border focus:border-sentinel-green"
+            className="flex-1 bg-background border-sentinel-border focus:border-sentinel-green text-base h-12"
             disabled={isLoading}
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="bg-sentinel-green hover:bg-sentinel-green/80 text-background"
+            className="bg-sentinel-green hover:bg-sentinel-green/80 text-background h-12 px-6"
           >
             {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              <Send className="w-4 h-4" />
+              <Send className="w-5 h-5" />
             )}
           </Button>
         </div>

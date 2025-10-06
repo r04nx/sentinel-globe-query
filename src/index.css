@@ -43,7 +43,7 @@ All colors MUST be HSL.
     --input: 210 15% 12%;
     --ring: 150 100% 50%;
 
-    --radius: 0.5rem;
+    --radius: 0rem;
     
     /* Custom theme colors */
     --sentinel-green: 150 100% 50%;

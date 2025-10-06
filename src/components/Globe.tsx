@@ -1,7 +1,8 @@
-import { useRef, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Sphere, Line } from "@react-three/drei";
+import { useRef, useMemo, useEffect, useState } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { OrbitControls, Sphere, Line, Stars } from "@react-three/drei";
 import * as THREE from "three";
+import earthMapUrl from "@/assets/earth-map.png";
 
 // Generate random disaster points
 const generateDisasterPoints = (count: number) => {
@@ -56,6 +57,14 @@ const DisasterMarker = ({ position, severity, type }: any) => {
 const GlobeComponent = () => {
   const globeRef = useRef<THREE.Mesh>(null);
   const disasterPoints = useMemo(() => generateDisasterPoints(50), []);
+  const [earthTexture, setEarthTexture] = useState<THREE.Texture | null>(null);
+
+  useEffect(() => {
+    const loader = new THREE.TextureLoader();
+    loader.load(earthMapUrl, (texture) => {
+      setEarthTexture(texture);
+    });
+  }, []);
 
   useFrame(() => {
     if (globeRef.current) {
@@ -104,15 +113,25 @@ const GlobeComponent = () => {
 
   return (
     <group>
+      {/* Stars background */}
+      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+      
       {/* Main globe */}
       <Sphere ref={globeRef} args={[2, 64, 64]}>
-        <meshPhongMaterial
-          color="#0a0a0f"
-          emissive="#001100"
-          shininess={100}
-          transparent
-          opacity={0.9}
-        />
+        {earthTexture ? (
+          <meshPhongMaterial
+            map={earthTexture}
+            emissive="#001100"
+            emissiveIntensity={0.2}
+            shininess={100}
+          />
+        ) : (
+          <meshPhongMaterial
+            color="#0a1929"
+            emissive="#001100"
+            shininess={100}
+          />
+        )}
       </Sphere>
 
       {/* Grid lines */}
@@ -148,18 +167,19 @@ const GlobeComponent = () => {
 export const Globe = () => {
   return (
     <div className="w-full h-full">
-      <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
-        <ambientLight intensity={0.3} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#00ff41" />
+      <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
+        <color attach="background" args={["#000000"]} />
+        <ambientLight intensity={0.4} />
+        <pointLight position={[10, 10, 10]} intensity={1.5} />
+        <pointLight position={[-10, -10, -10]} intensity={0.8} color="#00ff41" />
         <GlobeComponent />
         <OrbitControls
           enableZoom={true}
-          enablePan={false}
-          minDistance={3}
-          maxDistance={8}
+          enablePan={true}
+          minDistance={2.5}
+          maxDistance={10}
           autoRotate
-          autoRotateSpeed={0.5}
+          autoRotateSpeed={0.3}
         />
       </Canvas>
     </div>
