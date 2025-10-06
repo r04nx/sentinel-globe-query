@@ -8,7 +8,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-}-+
+}
 
 export const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
