@@ -41,24 +41,16 @@ export const ChatInterface = () => {
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        "I've analyzed the data. Found 15 flood-affected regions with rainfall exceeding 100mm. The most critical areas are in Maharashtra (3 zones), Kerala (2 zones), and Assam (4 zones). Real-time satellite data shows water levels rising at 2.3cm/hour.",
-        "Processing your query... I've identified 23 seismic events in the last 48 hours. 3 earthquakes above 4.5 magnitude detected in the Pacific Ring of Fire. No tsunami warnings issued. Detailed geological analysis available.",
-        "Social media analysis complete. Detected 1,247 distress signals across affected areas. 89% verified through cross-referencing with official sources. Emergency response teams have been alerted to 15 critical zones.",
-        "Historical pattern analysis shows this event matches 2019 disaster profile with 87% similarity. Predictive models suggest peak intensity will occur in 6-8 hours. Evacuation recommendations generated for 12 high-risk zones."
-      ];
-
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: responses[Math.floor(Math.random() * responses.length)],
-        timestamp: new Date()
-      };
-
+    try {
+      const res = await fetch('/api/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: input }) });
+      const data = await res.json();
+      const assistantMessage: Message = { role: 'assistant', content: data.reply || 'OK', timestamp: new Date() };
       setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1500);
+    } catch (e) {
+      const assistantMessage: Message = { role: 'assistant', content: 'Backend unavailable. Please try again later.', timestamp: new Date() };
+      setMessages(prev => [...prev, assistantMessage]);
+    }
+    setIsLoading(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

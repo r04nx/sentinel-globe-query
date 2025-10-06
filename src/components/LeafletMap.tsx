@@ -35,6 +35,7 @@ export const LeafletMap = () => {
 
       // Load local Mumbai GeoJSON and style roads abstractly
       try {
+        // Load Mumbai skeleton
         const resp = await fetch('/mumbai.geojson');
         const gj = await resp.json();
         // Vibrant neon palette tuned for dark background
@@ -87,6 +88,20 @@ export const LeafletMap = () => {
       } catch (e) {
         // ignore if not present
       }
+
+      // Load events from backend and render pins with type-specific colors and breathing animation
+      try {
+        const from = Date.now() - 1000 * 60 * 60 * 24;
+        const events = await fetch(`/api/events?from=${from}`).then(r => r.json());
+        const colors: Record<string,string> = { flood: '#47b3ff', earthquake: '#ff4d4d', fire: '#ff8a1f', storm: '#35ffd2' };
+        for (const it of events.items || []) {
+          const c = colors[it.type] || '#00ffa3';
+          const html = `<div class="pulse-pin" style="--pin:${c}"></div>`;
+          const icon = L.divIcon({ className: 'neon-pin', html, iconSize: [16,16] as any, iconAnchor: [8,8] as any });
+          const marker = L.marker([it.lat, it.lon], { icon }).addTo(map);
+          marker.bindPopup(`<div><strong>${it.type.toUpperCase()}</strong><br/>Severity: ${(it.severity * 100).toFixed(0)}%<br/>${new Date(it.timestamp).toLocaleString()}</div>`);
+        }
+      } catch {}
 
       // Subtle neon cursor on map container
       if (containerRef.current) {

@@ -145,6 +145,35 @@ All colors MUST be HSL.
     animation: scanline 8s linear infinite;
   }
 
+  /* Leaflet breathing neon pin */
+  .pulse-pin {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--pin, #00ffa3);
+    box-shadow: 0 0 6px var(--pin, #00ffa3), 0 0 12px var(--pin, #00ffa3);
+    transform: translate(-50%, -50%);
+  }
+  .pulse-pin::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--pin, #00ffa3);
+    animation: pulse 2.2s ease-out infinite;
+    opacity: 0.4;
+  }
+  @keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    70% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+    100% { opacity: 0; }
+  }
+
   /* Prevent copying/selecting - allow inputs */
   .no-select, body, body * { -webkit-user-select: none; -moz-user-select: none; user-select: none; }
   input, textarea { -webkit-user-select: text; -moz-user-select: text; user-select: text; }
