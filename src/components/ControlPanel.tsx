@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import jsPDF from "jspdf";
 
 export const ControlPanel = () => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const handleExportPDF = () => {
     const doc = new jsPDF();
     

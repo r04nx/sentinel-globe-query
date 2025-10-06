@@ -29,7 +29,7 @@ const mapServices = [
 ];
 
 export const DataSourcesPanel = () => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   return (
     <Card className="p-0 bg-card/60 backdrop-blur-sm border-sentinel-border/80 rounded-lg overflow-hidden">
       <button

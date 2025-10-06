@@ -156,6 +156,170 @@ const GeoJsonLandRenderer = ({ config }: { config?: GlobeRuntimeConfig }) => {
   return null;
 };
 
+// Mumbai focus layers: India state boundaries and Mumbai OSM roads via Overpass (GeoJSON served locally or remote)
+const MumbaiLayers = ({ config }: { config?: GlobeRuntimeConfig }) => {
+  const { data: indiaStates } = useGeoJsonData('https://raw.githubusercontent.com/geohacker/india/master/state/india_telengana.geojson');
+  const { data: mumbaiRoads } = useGeoJsonData('https://overpass-api.nextzen.org/api/interpreter?data=[out:json];area[name="Mumbai"];(way["highway"](area););out%20geom;');
+  const groupRef = useRef<THREE.Group>(null);
+  const { scene, camera } = useThree();
+
+  useEffect(() => {
+    if (!config?.showLandMasses) return;
+    // Distance-based visibility: only when zoomed in
+    const distance = camera.position.length();
+    const shouldShow = distance < 6;
+    if (!shouldShow) {
+      if (groupRef.current) groupRef.current.visible = false;
+      return;
+    }
+    if (groupRef.current) groupRef.current.visible = true;
+  }, [config?.showLandMasses, camera.position]);
+
+  useEffect(() => {
+    const group = new THREE.Group();
+    groupRef.current = group;
+    scene.add(group);
+    return () => {
+      scene.remove(group);
+      group.traverse((child) => {
+        if (child instanceof THREE.Line || child instanceof THREE.Mesh) {
+          child.geometry?.dispose();
+          if (child.material instanceof THREE.Material) child.material.dispose();
+        }
+      });
+    };
+  }, [scene]);
+
+  useEffect(() => {
+    if (!groupRef.current) return;
+    const group = groupRef.current;
+    // Clear old
+    while (group.children.length) group.remove(group.children[0]);
+
+    // India states (outline only)
+    if (indiaStates) {
+      const geoms = createGeometryFromGeoJSON({ json: indiaStates, radius: 2.002 });
+      geoms.forEach((g) => {
+        const mat = new THREE.LineBasicMaterial({ color: new THREE.Color('#00ffa3'), transparent: true, opacity: 0.35, depthTest: false });
+        const line = new THREE.Line(g, mat);
+        group.add(line);
+      });
+    }
+
+    // Mumbai roads (lines)
+    if (mumbaiRoads && mumbaiRoads.elements) {
+      try {
+        const features = { type: 'FeatureCollection', features: mumbaiRoads.elements.filter((e: any) => e.type === 'way' && e.geometry).map((e: any) => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: e.geometry.map((p: any) => [p.lon, p.lat]) }, properties: e.tags || {} })) };
+        const roadGeoms = createGeometryFromGeoJSON({ json: features, radius: 2.001 });
+        roadGeoms.forEach((g) => {
+          const mat = new THREE.LineBasicMaterial({ color: new THREE.Color('#1de9b6'), transparent: true, opacity: 0.6, depthTest: false });
+          const line = new THREE.Line(g, mat);
+          group.add(line);
+        });
+      } catch {}
+    }
+  }, [indiaStates, mumbaiRoads]);
+
+  return null;
+};
+
+// Local Mumbai GeoJSON layer from public/mumbai.geojson with simple legend
+const MumbaiLocalLayer = ({ config }: { config?: GlobeRuntimeConfig }) => {
+  const { data: mumbai } = useGeoJsonData('/mumbai.geojson');
+  const groupRef = useRef<THREE.Group>(null);
+  const { scene, camera } = useThree();
+
+  const roadColors: Record<string, string> = {
+    motorway: '#ff7b7b',
+    trunk: '#ffb27b',
+    primary: '#ffd37b',
+    secondary: '#b6ff7b',
+    tertiary: '#7bffc8',
+    residential: '#7bd0ff',
+    service: '#c79bff',
+    footway: '#ff7be5',
+  };
+
+  useEffect(() => {
+    const group = new THREE.Group();
+    groupRef.current = group;
+    scene.add(group);
+    return () => {
+      scene.remove(group);
+      group.traverse((child) => {
+        if (child instanceof THREE.Line || child instanceof THREE.Mesh) {
+          child.geometry?.dispose();
+          if (child.material instanceof THREE.Material) child.material.dispose();
+        }
+      });
+    };
+  }, [scene]);
+
+  useEffect(() => {
+    if (!mumbai || !groupRef.current) return;
+    const group = groupRef.current;
+    while (group.children.length) group.remove(group.children[0]);
+
+    const buildLine = (coords: number[][], color: string) => {
+      const pts: number[] = [];
+      for (const [lon, lat] of coords) {
+        const v = latLonToVec3(lat, lon, 2.001);
+        pts.push(v.x, v.y, v.z);
+      }
+      if (pts.length >= 6) {
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+        const mat = new THREE.LineBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: 0.7, depthTest: false });
+        const line = new THREE.Line(g, mat);
+        group.add(line);
+      }
+    };
+
+    const buildPoly = (rings: number[][][], color: string) => {
+      rings.forEach((ring) => buildLine(ring, color));
+    };
+
+    const features = mumbai.type === 'FeatureCollection' ? mumbai.features : (mumbai.features ? mumbai.features : []);
+    for (const f of features) {
+      const geom = f.geometry;
+      if (!geom) continue;
+      const hw = (f.properties && (f.properties.highway || f.properties.road || f.properties.class)) || undefined;
+      const color = hw && roadColors[String(hw)] ? roadColors[String(hw)] : '#00ffa3';
+      if (geom.type === 'LineString') {
+        buildLine(geom.coordinates, color);
+      } else if (geom.type === 'MultiLineString') {
+        geom.coordinates.forEach((line: number[][]) => buildLine(line, color));
+      } else if (geom.type === 'Polygon') {
+        buildPoly(geom.coordinates, '#00ffa3');
+      } else if (geom.type === 'MultiPolygon') {
+        geom.coordinates.forEach((poly: number[][][]) => buildPoly(poly, '#00ffa3'));
+      }
+    }
+  }, [mumbai]);
+
+  // Show when zoomed in enough
+  useFrame(() => {
+    if (!groupRef.current) return;
+    const distance = camera.position.length();
+    groupRef.current.visible = distance < 6;
+  });
+
+  // Legend overlay
+  return (
+    <Html position={[0, 0, 0]} style={{ pointerEvents: 'none' }}>
+      <div style={{ position: 'fixed', top: 88, left: 16, background: 'rgba(0,0,0,0.6)', border: '1px solid #1de9b6', borderRadius: 6, padding: '6px 8px', fontSize: 11 }}>
+        <div style={{ marginBottom: 4, color: '#aaffee' }}>Mumbai Layers</div>
+        {Object.entries(roadColors).map(([k, v]) => (
+          <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 12, height: 2, background: v, display: 'inline-block' }} />
+            <span style={{ color: '#cfe' }}>{k}</span>
+          </div>
+        ))}
+      </div>
+    </Html>
+  );
+};
+
 // Load world country outlines as vector lines (GeoJSON) and return line segments and raw features
 const useWorldVectorOutlines = (radius: number) => {
   const [lineGeometries, setLineGeometries] = useState<THREE.BufferGeometry[]>([]);
@@ -235,9 +399,36 @@ const GlobeComponent = ({ config }: { config?: GlobeRuntimeConfig }) => {
   const [hoverInfo, setHoverInfo] = useState<{ name: string; pos: [number, number, number] } | null>(null);
   const moveRaf = useRef<number | null>(null);
 
+  const { camera } = useThree();
+  const controlsRef = useRef<any>(null);
   useFrame(() => {
-    if (globeRef.current && (config?.autoRotate ?? true)) {
-      globeRef.current.rotation.y += config?.autoRotateSpeed ?? 0.001;
+    if (!globeRef.current) return;
+    const distance = camera.position.length();
+    if (config?.autoRotate ?? true) {
+      // Slow down rotation when zoomed in
+      const base = config?.autoRotateSpeed ?? 0.001;
+      const factor = Math.min(1, Math.max(0.15, (distance - 2) / 4));
+      globeRef.current.rotation.y += base * factor;
+    }
+    // Clamp camera so it never enters the globe
+    const minDist = 2.006; // just above Mumbai layer radius (2.001)
+    if (distance < minDist) {
+      const dir = camera.position.clone().normalize();
+      camera.position.copy(dir.multiplyScalar(minDist));
+    }
+    // When paused and zoomed-in, slow interactions further
+    if (controlsRef.current) {
+      if ((config?.autoRotate ?? true) === false && distance < 3) {
+        controlsRef.current.zoomSpeed = 0.2;
+        controlsRef.current.rotateSpeed = 0.25;
+        controlsRef.current.panSpeed = 0.35;
+      } else {
+        controlsRef.current.zoomSpeed = 0.4;
+        controlsRef.current.rotateSpeed = 0.4;
+        controlsRef.current.panSpeed = 0.6;
+      }
+      // Keep min distance enforced on controls too
+      controlsRef.current.minDistance = minDist;
     }
   });
 
@@ -340,13 +531,14 @@ const GlobeComponent = ({ config }: { config?: GlobeRuntimeConfig }) => {
   };
 
   return (
+    <>
     <group>
       {/* Enhanced Starfield */}
       <EnhancedStarfield numStars={config?.starfieldDensity ?? 1000} />
       
       {/* Main globe */}
       <Sphere ref={globeRef} args={[2, 128, 64]} onPointerMove={handlePointerMove}>
-        <meshPhongMaterial
+          <meshPhongMaterial
           color="#0b1020"
           shininess={10}
           emissive="#001018"
@@ -359,6 +551,21 @@ const GlobeComponent = ({ config }: { config?: GlobeRuntimeConfig }) => {
 
       {/* Enhanced GeoJSON Land Rendering */}
       <GeoJsonLandRenderer config={config} />
+      {/* Mumbai layers for detailed zoom (remote Overpass disabled to avoid CORS) */}
+      <MumbaiLocalLayer config={config} />
+      <OrbitControls
+        ref={controlsRef}
+        enableZoom={true}
+        enablePan={true}
+        minDistance={2.03}
+        maxDistance={200}
+        autoRotate={config?.autoRotate ?? true}
+        autoRotateSpeed={(config?.autoRotateSpeed ?? 0.001) * 300}
+        enableDamping
+        dampingFactor={0.12}
+        zoomSpeed={0.4}
+        rotateSpeed={0.4}
+      />
 
       {/* Subtle 3D grid lines */}
       {(config?.showGrid ?? true) && gridLines.map((points, i) => (
@@ -420,6 +627,20 @@ const GlobeComponent = ({ config }: { config?: GlobeRuntimeConfig }) => {
         />
       </Sphere>
     </group>
+    <OrbitControls
+      ref={controlsRef}
+      enableZoom={true}
+      enablePan={true}
+      minDistance={2.006}
+      maxDistance={200}
+      autoRotate={config?.autoRotate ?? true}
+      autoRotateSpeed={(config?.autoRotateSpeed ?? 0.001) * 300}
+      enableDamping
+      dampingFactor={0.12}
+      zoomSpeed={0.4}
+      rotateSpeed={0.4}
+    />
+    </>
   );
 };
 
@@ -439,18 +660,23 @@ export const Globe = ({ config }: { config?: GlobeRuntimeConfig }) => {
           intensity={0.5} 
           color="#4169E1" 
         />
+        {/* Move camera to Mumbai on first frame */}
+        <CameraMumbaiInit />
         <GlobeComponent config={config} />
-        <OrbitControls
-          enableZoom={true}
-          enablePan={true}
-          minDistance={2.5}
-          maxDistance={10}
-          autoRotate={config?.autoRotate ?? true}
-          autoRotateSpeed={(config?.autoRotateSpeed ?? 0.001) * 300}
-          enableDamping
-          dampingFactor={0.08}
-        />
       </Canvas>
     </div>
   );
+};
+
+// One-time camera move to Mumbai on mount
+const CameraMumbaiInit = () => {
+  const { camera } = useThree();
+  useEffect(() => {
+    // Mumbai approx lat/lon: 19.0760 N, 72.8777 E
+    const target = latLonToVec3(19.0760, 72.8777, 2.0);
+    const dir = target.clone().normalize();
+    camera.position.copy(dir.multiplyScalar(3.2));
+    camera.lookAt(0, 0, 0);
+  }, [camera]);
+  return null;
 };

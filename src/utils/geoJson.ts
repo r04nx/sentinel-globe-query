@@ -139,6 +139,32 @@ export function createGeometryFromGeoJSON({ json, radius, materialOptions }: Geo
           }
         }
       }
+    } else if (geom.type === 'LineString') {
+      const coordinateArray = createCoordinateArray(geom.coordinates);
+      const vertices: number[] = [];
+      for (const coord of coordinateArray) {
+        const point = convertToSphereCoords(coord, radius);
+        vertices.push(point.x, point.y, point.z);
+      }
+      if (vertices.length > 0) {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometries.push(geometry);
+      }
+    } else if (geom.type === 'MultiLineString') {
+      for (const line of geom.coordinates) {
+        const coordinateArray = createCoordinateArray(line);
+        const vertices: number[] = [];
+        for (const coord of coordinateArray) {
+          const point = convertToSphereCoords(coord, radius);
+          vertices.push(point.x, point.y, point.z);
+        }
+        if (vertices.length > 0) {
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+          geometries.push(geometry);
+        }
+      }
     }
   }
   

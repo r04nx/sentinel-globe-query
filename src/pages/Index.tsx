@@ -2,6 +2,7 @@ import { useState, Suspense } from "react";
 import { Menu, Bell, Settings, User, X, Maximize2, Minimize2 } from "lucide-react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { Globe } from "@/components/Globe";
+import { LeafletMap } from "@/components/LeafletMap";
 import { MapWizard, defaultGlobeConfig, type GlobeConfig } from "@/components/MapWizard";
 import { ChatInterface } from "@/components/ChatInterface";
 import { StatsPanel } from "@/components/StatsPanel";
@@ -19,6 +20,8 @@ const Index = () => {
   const [globeCfg, setGlobeCfg] = useState<GlobeConfig>(defaultGlobeConfig);
   const [leftWidth, setLeftWidth] = useState<number>(400);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [rotationPaused, setRotationPaused] = useState(false);
+  const [mode2D, setMode2D] = useState(true);
 
   if (isLoading) {
     return <LoadingScreen onLoadComplete={() => setIsLoading(false)} />;
@@ -49,14 +52,17 @@ const Index = () => {
             </div>
           </div>
         }>
+          {mode2D ? (
+            <LeafletMap />
+          ) : (
           <Globe config={{
             basemap: globeCfg.basemap,
             showGrid: globeCfg.showGrid,
             showOutlines: globeCfg.showOutlines,
             globeOpacity: globeCfg.globeOpacity,
-            autoRotate: globeCfg.autoRotate,
+            autoRotate: rotationPaused ? false : globeCfg.autoRotate,
             autoRotateSpeed: globeCfg.autoRotateSpeed,
-          }} />
+          }} />)}
         </Suspense>
       </div>
 
@@ -89,6 +95,12 @@ const Index = () => {
               </Button>
               <Button variant="outline" size="sm" className="hover:bg-sentinel-green/10" onClick={() => setShowWizard(true)}>
                 Map Wizard
+              </Button>
+              <Button variant="outline" size="sm" className="hover:bg-sentinel-green/10" onClick={() => setRotationPaused(!rotationPaused)}>
+                {rotationPaused ? 'Play Globe' : 'Pause Globe'}
+              </Button>
+              <Button variant="outline" size="sm" className="hover:bg-sentinel-green/10" onClick={() => setMode2D(!mode2D)}>
+                {mode2D ? '3D Globe' : '2D Map'}
               </Button>
               <Button variant="ghost" size="icon" className="hover:bg-sentinel-green/10">
                 <Settings className="w-5 h-5" />
