@@ -42,7 +42,7 @@ export const ChatInterface = () => {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: input }) });
+      const res = await fetch('http://localhost:3001/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: input }) });
       const data = await res.json();
       const assistantMessage: Message = { role: 'assistant', content: data.reply || 'OK', timestamp: new Date() };
       setMessages(prev => [...prev, assistantMessage]);
