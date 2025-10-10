@@ -1,0 +1,76 @@
+generator client {
+  provider  = "prisma-client-py"
+  interface = "asyncio"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  username String @unique
+  hashed_password String
+  created_at DateTime @default(now())
+  
+  @@map("users")
+}
+
+model Disaster {
+  id            String   @id @default(cuid())
+  type          String   // earthquake, flood, hurricane, wildfire, etc.
+  title         String
+  description   String?
+  severity      String   // low, medium, high, critical
+  latitude      Float
+  longitude     Float
+  magnitude     Float?   // for earthquakes
+  affected_area Float?   // in km²
+  casualties    Int?
+  status        String   @default("active") // active, resolved, monitoring
+  source        String   // USGS, NOAA, etc.
+  source_url    String?
+  external_id   String?  @unique // ID from the source
+  occurred_at   DateTime
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  
+  @@map("disasters")
+}
+
+model NewsArticle {
+  id          String   @id @default(cuid())
+  title       String
+  content     String?
+  summary     String?
+  url         String   @unique
+  source      String
+  published_at DateTime
+  disaster_keywords String? // JSON array of keywords
+  location    String?
+  created_at  DateTime @default(now())
+  
+  @@map("news_articles")
+}
+
+model WeatherAlert {
+  id          String   @id @default(cuid())
+  alert_type  String   // tornado, hurricane, flood, etc.
+  title       String
+  description String?
+  severity    String   // minor, moderate, severe, extreme
+  latitude    Float
+  longitude   Float
+  area_desc   String?
+  urgency     String   // immediate, expected, future
+  certainty   String   // observed, likely, possible
+  expires_at  DateTime?
+  issued_at   DateTime
+  source      String   @default("NWS")
+  source_id   String?  @unique
+  created_at  DateTime @default(now())
+  
+  @@map("weather_alerts")
+}
